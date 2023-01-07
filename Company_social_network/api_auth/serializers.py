@@ -5,6 +5,8 @@ from django.core import exceptions
 
 from django.utils.translation import gettext_lazy as _
 
+from Company_social_network.api_auth.models import Profile
+
 UserModel = get_user_model()
 
 
@@ -77,3 +79,14 @@ class LoginUserSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ('first_name', 'last_name', 'profile_picture', 'description')
+
+    def create(self, validated_data):
+        print(self.context['request'].user)
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
