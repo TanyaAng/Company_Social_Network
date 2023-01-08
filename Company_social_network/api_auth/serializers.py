@@ -5,10 +5,29 @@ from django.core import exceptions
 
 from django.utils.translation import gettext_lazy as _
 
-from Company_social_network.api_auth.models import Profile
+from Company_social_network.api_auth.models import Profile, CompanyUser
 from Company_social_network.api_posts.models import Post, Like
 
 UserModel = get_user_model()
+
+
+class ShortUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyUser
+        fields = ('email',)
+
+
+class ShortProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ('first_name', 'last_name', 'description')
+
+
+class ExtendedUserSerializer(serializers.ModelSerializer):
+    profile = ShortProfileSerializer()
+    class Meta:
+        model = CompanyUser
+        fields = ('email', 'profile',)
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
@@ -83,12 +102,13 @@ class LoginUserSerializer(serializers.Serializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    user = ShortUserSerializer(read_only=True)
     total_posts = serializers.SerializerMethodField(read_only=True)
     total_likes = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Profile
-        fields = ('first_name', 'last_name', 'profile_picture', 'description', 'total_posts', 'total_likes')
+        fields = ('first_name', 'last_name', 'profile_picture', 'description', 'total_posts', 'total_likes', 'user')
 
     def create(self, validated_data):
         print(self.context['request'].user)
@@ -107,5 +127,3 @@ class ProfileSerializer(serializers.ModelSerializer):
         for post in total_posts_of_user:
             total_likes += Like.objects.filter(to_post_id=post).count()
         return total_likes
-
-

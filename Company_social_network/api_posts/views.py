@@ -6,8 +6,9 @@ from rest_framework import pagination
 
 from datetime import date
 
-from Company_social_network.api_posts.models import Post, Like
 from Company_social_network.api_posts.serializers import PostSerializer, LikeSerializer
+from Company_social_network.core.repository.api_posts_repository import get_all_posts_not_deleted, find_post_by_pk, \
+    get_post, find_is_current_user_has_liked_the_post
 
 
 class PostPagination(pagination.PageNumberPagination):
@@ -15,7 +16,7 @@ class PostPagination(pagination.PageNumberPagination):
 
 
 class ListCreatePostView(rest_generic_views.ListCreateAPIView):
-    queryset = Post.objects.filter(deleted=False)
+    queryset = get_all_posts_not_deleted()
     serializer_class = PostSerializer
     pagination_class = PostPagination
     permission_classes = (permissions.IsAuthenticated,)
@@ -24,27 +25,26 @@ class ListCreatePostView(rest_generic_views.ListCreateAPIView):
         serializer = PostSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DetailsPostView(rest_views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get(self, request, pk):
-        post = Post.objects.filter(id=pk)
-        if not post:
+        found_post = find_post_by_pk(pk)
+        if not found_post:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        post = post.get()
+        post = get_post(found_post)
         serializer = PostSerializer(post)
         return Response(data=serializer.data)
 
     def delete(self, request, pk):
-        post = Post.objects.filter(id=pk)
-        if not post:
+        found_post = find_post_by_pk(pk)
+        if not found_post:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        post = post.get()
+        post = get_post(found_post)
         if not post.author == self.request.user:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         post.deleted = True
@@ -53,20 +53,16 @@ class DetailsPostView(rest_views.APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# class CreateLikeView(rest_generic_views.CreateAPIView):
-#     queryset = Like.objects.all()
-#     serializer_class = LikeSerializer
-#     permission_classes = (permissions.IsAuthenticated,)
-
 class CreateLikeView(rest_views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request, pk, *args, **kwargs):
-        post = Post.objects.filter(id=pk)
-        if not post:
+        found_post = find_post_by_pk(pk)
+        if not found_post:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        post = post.get()
-        post_like = Like.objects.filter(to_post_id=post, user_id=request.user).first()
+        post = get_post(found_post)
+        user = request.user
+        post_like = find_is_current_user_has_liked_the_post(post, user)
         if post_like:
             post_like.delete()
             return Response(status=status.HTTP_201_CREATED)
@@ -74,5 +70,5 @@ class CreateLikeView(rest_views.APIView):
             serializer = LikeSerializer(post_like, data=request.data, context={'request': request, 'post': post.id})
             if serializer.is_valid():
                 serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+            return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
