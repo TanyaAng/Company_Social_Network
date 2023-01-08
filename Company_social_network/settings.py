@@ -25,6 +25,7 @@ PROJECT_APPS = (
 THIRD_PARTY_APPS = (
     'rest_framework',
     'rest_framework.authtoken',
+    'django_cron',
 )
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
@@ -70,11 +71,15 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+CRON_CLASSES = [
+    "Company_social_network.api_posts.cron.MyCronJob",
+]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.permissions.AllowAny',
     ]
 }
 
