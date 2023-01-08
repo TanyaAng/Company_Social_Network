@@ -1,18 +1,17 @@
 from django.contrib import admin
 
-from Company_social_network.api_posts.cron import MyCronJob
 from Company_social_network.api_posts.models import Post, Like
 
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('author', 'publication_date_time', 'deleted', 'date_deleted')
+    ordering = ('-publication_date_time',)
 
 
 @admin.register(Like)
 class LikeAdmin(admin.ModelAdmin):
-    pass
-
+    list_display = ('to_post', 'user')
 
 # # @admin.register(MyCronJob)
 # class MyCronJobAdmin(admin.ModelAdmin):

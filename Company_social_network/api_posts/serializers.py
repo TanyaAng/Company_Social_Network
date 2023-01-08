@@ -4,7 +4,6 @@ from Company_social_network.api_auth.serializers import ExtendedUserSerializer
 from Company_social_network.api_posts.models import Post, Like
 
 
-
 class ShortPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post

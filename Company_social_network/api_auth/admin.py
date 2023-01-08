@@ -5,9 +5,10 @@ from Company_social_network.api_auth.models import CompanyUser, Profile
 
 @admin.register(CompanyUser)
 class UserAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('email', 'is_active')
+    ordering = ('is_active',)
 
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('full_name', 'user')

@@ -24,7 +24,6 @@ class LoginApiView(authtoken_views.ObtainAuthToken):
         user = serializer.validated_data['user']
         if user.is_active:
             token, created = authtoken_models.Token.objects.get_or_create(user=user)
-
             return Response({
                 'token': token.key,
                 'user_id': user.pk,

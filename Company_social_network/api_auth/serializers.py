@@ -35,8 +35,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         model = UserModel
         fields = ('email', 'password')
 
-        # This hashes the password (Not save in plain-text in the DB)
-
+    # This hashes the password (Not save in plain-text in the DB)
     def create(self, validated_data):
         user = super().create(validated_data)
         user.set_password(user.password)
@@ -65,7 +64,6 @@ class CreateUserSerializer(serializers.ModelSerializer):
 class LoginUserSerializer(serializers.Serializer):
     email = serializers.CharField(
         label=_("Email"),
-        # style={'input_type': 'email'},
         write_only=True
     )
     password = serializers.CharField(
