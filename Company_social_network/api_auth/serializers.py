@@ -6,6 +6,7 @@ from django.core import exceptions
 from django.utils.translation import gettext_lazy as _
 
 from Company_social_network.api_auth.models import Profile
+from Company_social_network.api_posts.models import Post, Like
 
 UserModel = get_user_model()
 
@@ -82,11 +83,29 @@ class LoginUserSerializer(serializers.Serializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    total_posts = serializers.SerializerMethodField(read_only=True)
+    total_likes = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Profile
-        fields = ('first_name', 'last_name', 'profile_picture', 'description')
+        fields = ('first_name', 'last_name', 'profile_picture', 'description', 'total_posts', 'total_likes')
 
     def create(self, validated_data):
         print(self.context['request'].user)
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
+
+    def get_total_posts(self, profile: Profile):
+        user = profile.user
+        total_count_of_user_posts = Post.objects.filter(author_id=user).count()
+        return total_count_of_user_posts
+
+    def get_total_likes(self, profile: Profile):
+        user = profile.user
+        total_posts_of_user = Post.objects.filter(author_id=user)
+        total_likes = 0
+        for post in total_posts_of_user:
+            total_likes += Like.objects.filter(to_post_id=post).count()
+        return total_likes
+
+

@@ -6,8 +6,8 @@ from rest_framework import pagination
 
 from datetime import date
 
-from Company_social_network.api_posts.models import Post
-from Company_social_network.api_posts.serializers import PostSerializer
+from Company_social_network.api_posts.models import Post, Like
+from Company_social_network.api_posts.serializers import PostSerializer, LikeSerializer
 
 
 class PostPagination(pagination.PageNumberPagination):
@@ -51,3 +51,28 @@ class DetailsPostView(rest_views.APIView):
         post.date_deleted = date.today()
         post.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# class CreateLikeView(rest_generic_views.CreateAPIView):
+#     queryset = Like.objects.all()
+#     serializer_class = LikeSerializer
+#     permission_classes = (permissions.IsAuthenticated,)
+
+class CreateLikeView(rest_views.APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, pk, *args, **kwargs):
+        post = Post.objects.filter(id=pk)
+        if not post:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        post = post.get()
+        post_like = Like.objects.filter(to_post_id=post, user_id=request.user).first()
+        if post_like:
+            post_like.delete()
+            return Response(status=status.HTTP_201_CREATED)
+        else:
+            serializer = LikeSerializer(post_like, data=request.data, context={'request': request, 'post': post.id})
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
